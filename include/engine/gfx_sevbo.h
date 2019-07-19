@@ -41,7 +41,7 @@ struct SEVBO_uv {
     SEVBO_uv(float u_, float v_) : u(u_), v(v_) {}
 
     void print() {
-        printf("  uv: %f, %f, %f", u, v);
+        printf("  uv: %f, %f", u, v);
     }
 };
 

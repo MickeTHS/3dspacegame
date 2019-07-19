@@ -101,7 +101,7 @@ bool Gfx_window::init() {
     }
     glfwMakeContextCurrent(_window);
     
-    _camera.init(width, height);
+    _camera.init((float)width, (float)height);
 
     // Initialize GLEW
     glewExperimental = true; // Needed for core profile
@@ -153,8 +153,8 @@ bool Gfx_window::init() {
     auto vbo1 = std::make_shared<SEVBO3D_pos_col>();
 
     float thickness = 0.002f;
-    float length = 0.03;
-    float offset = 0.003;
+    float length = 0.03f;
+    float offset = 0.003f;
 
     Gfx_quad left(
         glm::vec3(-(offset + length), -thickness / 2.0f, 0), 

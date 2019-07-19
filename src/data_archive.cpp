@@ -61,7 +61,7 @@ bool Data_archive::add_file(const char* path, const char* filename) {
 
     std::shared_ptr<Data_disk_file> sf = std::make_shared<Data_disk_file>();
     strcpy(sf->header.filename, filename);
-    sf->header.filesize = Data_utils::filesize(fullpath.c_str());
+    sf->header.filesize = static_cast<uint32_t>(Data_utils::filesize(fullpath.c_str()));
     sf->header.filetype = name_to_type(filename);
     
     _files.push_back(sf);
@@ -303,9 +303,6 @@ std::shared_ptr<Gfx_texture> Data_archive::load_texture_file(const char* name) {
             uint32_t disk_file_data_size = df->header.filesize - sizeof(Data_disk_file_header);
             df->data = malloc(disk_file_data_size);
             fread(df->data, disk_file_data_size, 1, _fp);
-
-            char tmp[100];
-            memcpy(tmp, df->data, 100);
 
             _files.push_back(df);
 
