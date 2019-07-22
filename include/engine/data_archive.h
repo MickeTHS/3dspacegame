@@ -5,6 +5,8 @@
 #include "engine/gfx_texture.h"
 #include "engine/gfx_sevbo.h"
 #include "engine/gfx_object.h"
+#include "engine/gfx_skinning.h"
+#include "engine/gfx_animation.h"
 
 struct Data_toc_entry {
     char filename[DATAFILE_FILENAME_MAX_LENGTH];
@@ -23,8 +25,11 @@ public:
     bool open(const char* path);
     std::shared_ptr<Gfx_texture> load_texture_file(const char* name);
     std::shared_ptr<Gfx_object> load_model_file(const char* name);
+    std::shared_ptr<Gfx_skeleton> load_skeleton_file(const char* name);
+    std::shared_ptr<Gfx_animation> load_animation_file(const char* name);
 
     // offline functions
+    bool read_file_and_add(const char* path);
     bool add_file(const char* path, const char* data_filename, Data_toc_entry& toc_entry);
     bool add_file(const char* path, const char* filename);
     bool add_subfile(std::shared_ptr<Data_disk_file> file);

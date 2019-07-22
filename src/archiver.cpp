@@ -99,5 +99,9 @@ int main(char** argv, int argc) {
     Data_archive arc2;
     arc2.open("../data/space.arc");
     */
+
+    Data_archive arc;
+    arc.open("D:\\projects\\3dspacegame\\offline_assets\\pkg\\piston.arc");
+
     return 0;
 }

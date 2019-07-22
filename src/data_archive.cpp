@@ -78,6 +78,8 @@ void Data_archive::generate_toc(std::vector<Data_toc_entry>& toc) {
         toc.push_back(t);
     }
 
+    optimize_toc(toc);
+
     calculate_toc_offsets(toc);
 }
 
@@ -122,10 +124,15 @@ void Data_archive::write(const char* filename) {
 
     write_toc(toc, fp);
     
-    for (auto&& f : _files) {
-        f->write(fp);
+    for (auto&& t : toc) {
+        for (auto&& f : _files) {
+            if (strcmp(f->header.filename, t.filename) == 0) {
+                f->write(fp);
+            }
+        }
     }
 
+    
     fclose(fp);
 }
 
@@ -199,6 +206,9 @@ Data_filetype Data_archive::name_to_type(const char* filename) {
         return Data_filetype::MODEL;
     }
     if (tn == "dds") {
+        return Data_filetype::DDS;
+    }
+    if (tn == "ddx") {
         return Data_filetype::DDS;
     }
     if (tn == "anim") {
@@ -326,6 +336,26 @@ std::shared_ptr<Gfx_texture> Data_archive::load_texture_file(const char* name) {
     return nullptr;
 }
 
+bool Data_archive::read_file_and_add(const char* path) {
+    std::shared_ptr<Data_disk_file> df = std::make_shared<Data_disk_file>();
+
+    FILE *fp = fopen(path, "rb");
+
+    Data_disk_file* ptr = df.get();
+    
+    fread(&ptr->header, sizeof(Data_disk_file_header), 1, fp);
+
+    uint32_t disk_file_data_size = df->header.filesize - sizeof(Data_disk_file_header);
+    df->data = malloc(disk_file_data_size);
+    fread(df->data, disk_file_data_size, 1, fp);
+
+    fclose(fp);
+
+    _files.push_back(df);
+
+    return true;
+}
+
 std::shared_ptr<Gfx_object> Data_archive::load_model_file(const char* name) {
     auto ff = get_file(name);
 
@@ -344,7 +374,7 @@ std::shared_ptr<Gfx_object> Data_archive::load_model_file(const char* name) {
             std::shared_ptr<Data_disk_file> df = std::make_shared<Data_disk_file>();
 
             fseek(_fp, t.offset, SEEK_SET);
-            fread(df.get(), sizeof(Data_disk_file_header), 1, _fp);
+            fread(&df->header, sizeof(Data_disk_file_header), 1, _fp);
 
             uint32_t disk_file_data_size = df->header.filesize - sizeof(Data_disk_file_header);
             df->data = malloc(disk_file_data_size);
@@ -362,6 +392,15 @@ std::shared_ptr<Gfx_object> Data_archive::load_model_file(const char* name) {
             offset += dtm.header.vertices_data_size;
 
             dtm.indicedata = &((uint8_t*)df->data)[offset];
+
+            uint32_t* indice_ptr = (uint32_t*)dtm.indicedata;
+
+            std::vector<uint32_t> stuff;
+
+            for (int i = 0; i < 32; ++i) {
+                stuff.push_back(indice_ptr[i]);
+            }
+
             
             std::shared_ptr<SEVBO> sevbo = std::make_shared<SEVBO>();
             sevbo->indice_buffer_size = dtm.header.indices_data_size;
@@ -369,13 +408,30 @@ std::shared_ptr<Gfx_object> Data_archive::load_model_file(const char* name) {
             sevbo->indice_data = dtm.indicedata;
             sevbo->vert_data = dtm.verticesdata;
             sevbo->num_indices = dtm.header.indices_data_size / sizeof(uint32_t);
-            sevbo->num_vertices = dtm.header.vertices_data_size / SEVBO::typesize(dtm.header.rendertype);
+            
+            uint32_t typesize = SEVBO::typesize(dtm.header.rendertype);
+
+            sevbo->num_vertices = dtm.header.vertices_data_size / typesize;
 
             std::shared_ptr<Gfx_draw_object> drawobj = std::make_shared<Gfx_draw_object>();
-            drawobj->setup(sevbo, Gfx_shader_store::get_instance().get_shader("posnormuv"));
+
+            if (dtm.header.rendertype == RT_3D_POS_NORM_UV) {
+                auto shader = Gfx_shader_store::get_instance().get_shader("pos_norm_uv");
+
+                assert(shader != nullptr);
+
+                drawobj->setup(sevbo, Gfx_shader_store::get_instance().get_shader("pos_norm_uv"));
+            }
+            else if (dtm.header.rendertype == RT_3D_POS_NORM_UV_BONE) {
+                auto shader = Gfx_shader_store::get_instance().get_shader("pos_norm_uv_bone");
+
+                assert(shader != nullptr);
+
+                drawobj->setup(sevbo, Gfx_shader_store::get_instance().get_shader("pos_norm_uv_bone"));
+            }
             
             std::shared_ptr<Gfx_object> obj = std::make_shared<Gfx_object>(sevbo, drawobj);
-            memcpy(&obj->local_bounds[0], &dtm.header.bb[0], sizeof(float)*24);
+            memcpy(&obj->local_bounds[0], &dtm.header.bb[0], sizeof(float)*6);
             obj->set_pos(glm::vec3(0,0,0));
             obj->update();
 
@@ -388,7 +444,147 @@ std::shared_ptr<Gfx_object> Data_archive::load_model_file(const char* name) {
     return nullptr;
 }
 
+void alloc_bones(std::shared_ptr<Gfx_bone> bone, const std::vector<Data_bone>& bonedata) {
+    for (int32_t i = 0; i < bonedata.size(); ++i) {
+        if (bonedata[i].parent_index == bone->index) {
+            std::shared_ptr<Gfx_bone> child = std::make_shared<Gfx_bone>();
+            child->index = i;
+            Data_bone* dtm = (Data_bone*)&bonedata[i];
+            child->parent_index = dtm->parent_index;
+            child->inv_bind_matrix = dtm->inv_bind_pose;
+            child->rel_matrix = dtm->matrix;
+            
+            bone->children.push_back(child);
 
+            alloc_bones(child, bonedata);
+        }
+    }
+}
+
+std::shared_ptr<Gfx_bone> get_bone(std::shared_ptr<Gfx_bone> bone, uint32_t index) {
+    if (bone->index == index) {
+        return bone;
+    }
+
+    for (auto b : bone->children) {
+        if (b->index == index) {
+            return b;
+        }
+        return get_bone(b, index);
+    }
+
+    return nullptr;
+}
+
+std::shared_ptr<Gfx_skeleton> Data_archive::load_skeleton_file(const char* name) {
+    auto ff = get_file(name);
+
+    /*
+    if (ff != nullptr) {
+        for (auto t : _models) {
+            if (strcmp(t->header.filename.c_str(), name) == 0) {
+                return t;
+            }
+        }
+    }*/
+
+    for (auto t : _toc) {
+        if (strcmp(t.filename, name) == 0) {
+
+            std::shared_ptr<Data_disk_file> df = std::make_shared<Data_disk_file>();
+
+            fseek(_fp, t.offset, SEEK_SET);
+            fread(&df->header, sizeof(Data_disk_file_header), 1, _fp);
+
+            uint32_t disk_file_data_size = df->header.filesize - sizeof(Data_disk_file_header);
+            df->data = malloc(disk_file_data_size);
+            fread(df->data, disk_file_data_size, 1, _fp);
+
+            _files.push_back(df);
+
+            Data_skeleton dtm;
+
+            memcpy(&dtm.header, &((uint8_t*)df->data)[0], sizeof(Data_skeleton_header));
+
+            uint32_t offset = sizeof(Data_skeleton_header);
+
+            dtm.bones.resize(dtm.header.num_bones);
+            memcpy(&dtm.bones[0], &((uint8_t*)df->data)[offset], sizeof(Data_bone) * dtm.header.num_bones);
+            
+            std::shared_ptr<Gfx_bone> rootbone = std::make_shared<Gfx_bone>();
+
+            Data_bone* bone = &dtm.bones[0];
+            rootbone->inv_bind_matrix = bone->inv_bind_pose;
+            rootbone->index = 0;
+            rootbone->rel_matrix = bone->matrix;
+            rootbone->parent_index = -1;
+
+            alloc_bones(rootbone, dtm.bones);
+
+            std::shared_ptr<Gfx_skeleton> skel = std::make_shared<Gfx_skeleton>();
+            skel->root = rootbone;
+            
+            for (uint32_t i = 0; i < dtm.header.num_bones; ++i) {
+                skel->bones.push_back(get_bone(skel->root, i));
+            }
+
+            return skel;
+        }
+    }
+
+    return nullptr;
+}
+
+
+std::shared_ptr<Gfx_animation> Data_archive::load_animation_file(const char* name) {
+    auto ff = get_file(name);
+
+    /*
+    if (ff != nullptr) {
+        for (auto t : _models) {
+            if (strcmp(t->header.filename.c_str(), name) == 0) {
+                return t;
+            }
+        }
+    }*/
+
+    for (auto t : _toc) {
+        if (strcmp(t.filename, name) == 0) {
+
+            std::shared_ptr<Data_disk_file> df = std::make_shared<Data_disk_file>();
+
+            fseek(_fp, t.offset, SEEK_SET);
+            fread(&df->header, sizeof(Data_disk_file_header), 1, _fp);
+
+            uint32_t disk_file_data_size = df->header.filesize - sizeof(Data_disk_file_header);
+            df->data = malloc(disk_file_data_size);
+            fread(df->data, disk_file_data_size, 1, _fp);
+
+            _files.push_back(df);
+
+            Data_animation dtm;
+
+            memcpy(&dtm.header, &((uint8_t*)df->data)[0], sizeof(Data_animation_header));
+
+            uint32_t offset = sizeof(Data_animation_header);
+            
+            dtm.bones.resize(dtm.header.num_bones);
+            dtm.frames.resize(dtm.header.num_frames);
+
+            memcpy(&dtm.bones[0], &((uint8_t*)df->data)[offset], sizeof(Data_animation_bone) * dtm.bones.size());
+            offset += dtm.bones.size() * sizeof(Data_animation_bone);
+
+            memcpy(&dtm.frames[0], &((uint8_t*)df->data)[offset], sizeof(Data_animation_frame) * dtm.frames.size());
+
+            std::shared_ptr<Gfx_animation> animation = std::make_shared<Gfx_animation>();
+            animation->animationdata = &dtm;
+            
+            return animation;
+        }
+    }
+
+    return nullptr;
+}
 
 bool Data_archive::read_toc(FILE* fp) {
 

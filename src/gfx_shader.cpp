@@ -6,16 +6,19 @@
 
 bool Gfx_shader_store::init() {
     
-    auto poscol = std::make_shared<Gfx_RT_3D_pos_col>();
-    poscol->setup();
-    auto posuv = std::make_shared<Gfx_RT_3D_pos_uv>();
-    posuv->setup();
-    auto posnormuv = std::make_shared<Gfx_RT_3D_pos_norm_uv>();
-    posnormuv->setup();
+    auto pos_col = std::make_shared<Gfx_RT_3D_pos_col>();
+    pos_col->setup();
+    auto pos_uv = std::make_shared<Gfx_RT_3D_pos_uv>();
+    pos_uv->setup();
+    auto pos_norm_uv = std::make_shared<Gfx_RT_3D_pos_norm_uv>();
+    pos_norm_uv->setup();
+    auto pos_norm_uv_bone = std::make_shared<Gfx_RT_3D_pos_norm_uv_bone>();
+    pos_norm_uv_bone->setup();
 
-    add_shader(poscol);
-    add_shader(posnormuv);
-    add_shader(posuv);
+    add_shader(pos_col);
+    add_shader(pos_norm_uv);
+    add_shader(pos_uv);
+    add_shader(pos_norm_uv_bone);
 
     return true;
 }
@@ -143,6 +146,44 @@ bool Gfx_RT_3D_pos_col::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t vertexBuffe
 }
 
 
+bool Gfx_RT_3D_pos_norm_uv_bone::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t vertexBufferId, uint32_t indexBufferId) {
+
+    uint32_t pos = glGetAttribLocation(programId, "v_pos");
+    uint32_t norm = glGetAttribLocation(programId, "v_norm");
+    uint32_t uv = glGetAttribLocation(programId, "v_uv");
+    uint32_t bone = glGetAttribLocation(programId, "f_bone");
+
+    glEnableVertexAttribArray(pos);
+    glEnableVertexAttribArray(norm);
+    glEnableVertexAttribArray(uv);
+    glEnableVertexAttribArray(bone);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferId);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(SEVBO_3D_pos_norm_uv_bone_vertex) * vbo->num_vertices, vbo->vert_data, GL_STATIC_DRAW);
+    //glEnableVertexAttribArray(0);    // We like submitting vertices on stream 0 for no special reason
+    glVertexAttribPointer(pos, 3, GL_FLOAT, GL_FALSE, sizeof(SEVBO_3D_pos_norm_uv_bone_vertex), BUFFER_OFFSET(0));
+    glVertexAttribPointer(norm, 3, GL_FLOAT, GL_FALSE, sizeof(SEVBO_3D_pos_norm_uv_bone_vertex), BUFFER_OFFSET(sizeof(SEVBO_vertex)));
+    glVertexAttribPointer(uv, 2, GL_FLOAT, GL_FALSE, sizeof(SEVBO_3D_pos_norm_uv_bone_vertex), BUFFER_OFFSET(sizeof(SEVBO_vertex) + sizeof(SEVBO_vertex)));
+    glVertexAttribPointer(bone, 1, GL_INT, GL_FALSE, sizeof(SEVBO_3D_pos_norm_uv_bone_vertex), BUFFER_OFFSET(sizeof(SEVBO_vertex) + sizeof(SEVBO_vertex) + sizeof(SEVBO_uv)));
+
+    
+    std::vector<SEVBO_3D_pos_norm_uv_bone_vertex> test;
+    test.resize(vbo->num_vertices);
+    memcpy(&test[0], &((uint8_t*)vbo->vert_data)[0], sizeof(SEVBO_3D_pos_norm_uv_bone_vertex) * vbo->num_vertices);
+    
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferId);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * vbo->num_indices, vbo->indice_data, GL_STATIC_DRAW);
+
+    /*std::vector<uint32_t> bones;
+    bones.resize(vbo->num_indices);
+    memcpy(&bones[0], &((uint8_t*)vbo->indice_data)[0], sizeof(uint32_t) * vbo->num_indices);
+    */
+    glBindVertexArray(0);
+
+    return true;
+}
+
 bool Gfx_RT_3D_pos_norm_uv::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t vertexBufferId, uint32_t indexBufferId) {
 
     uint32_t pos = glGetAttribLocation(programId, "pos");
@@ -216,6 +257,11 @@ bool Gfx_RT_3D_pos_uv_alpha::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t vertex
 }
 
 bool Gfx_shader::setup(const char* name_, const char* vsfile, const char* fsfile) {
+    char debugmsg[128];
+    sprintf(debugmsg, "shader init: %s", name_);
+
+    Gfx_log::Gfx_GL_debug(Gfx_log::SHADER_INIT, debugmsg);
+
     name = std::string(name_);
 
     programId = LoadShaders(vsfile, fsfile);
@@ -227,9 +273,11 @@ bool Gfx_shader::setup(const char* name_, const char* vsfile, const char* fsfile
 
     u_mvp = glGetUniformLocation(programId, "mvp");
     u_model = glGetUniformLocation(programId, "model");
+    u_model_view = glGetUniformLocation(programId, "model_view");
     u_tex0 = glGetUniformLocation(programId, "tex0");
     u_highlight = glGetUniformLocation(programId, "highlight");
     u_light0pos = glGetUniformLocation(programId, "light0pos");
+    u_pal = glGetUniformLocation(programId, "pal");
 
     if (u_mvp < 0) {
         printf("Gfx_shader: Notice: Shader without mvp\n");

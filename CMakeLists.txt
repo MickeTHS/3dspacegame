@@ -45,6 +45,8 @@ if(APPLE)
 # 3dspacegame
 add_executable(3dspacegame
         src/main.cpp
+        src/gfx_animation.cpp
+        src/gfx_skinning.cpp
         src/gfx_camera.cpp
         src/gfx_shader.cpp
         src/gfx_texture.cpp
@@ -53,7 +55,8 @@ add_executable(3dspacegame
         src/nv_dds.cpp
         macos/timer.cpp
 		macos/timer.h
-
+        include/engine/gfx_animation.h
+        include/engine/gfx_skinning.h
         include/engine/gfx_window.h
         include/engine/gfx_primitives.h
         include/engine/gfx_camera.h
@@ -67,6 +70,42 @@ target_link_libraries(3dspacegame
 )
 
 elseif(WIN32)
+
+#nut2mdl
+ADD_EXECUTABLE(nut2mdl
+    tools/src/animreader.cpp
+    tools/src/animreader.h
+    tools/src/log.h
+    tools/src/main.cpp
+    tools/src/mdl.cpp
+    tools/src/mdl.hpp
+    tools/src/mdlwriter.cpp
+    tools/src/mdlwriter.hpp
+    src/mmh3.cpp
+    include/engine/mmh3.h
+    tools/src/osfuncs.h
+    tools/src/pugiconfig.hpp
+    tools/src/pugixml.cpp
+    tools/src/pugixml.hpp
+    include/engine/data_file.h
+    include/engine/data_archive.h
+    src/data_file.cpp
+    src/data_archive.cpp
+
+    src/gfx_object.cpp
+    src/gfx_texture.cpp
+	src/gfx_sevbo.cpp
+    include/engine/gfx_object.h
+    include/engine/gfx_texture.h
+    include/engine/gfx_sevbo.h
+    include/engine/gfx_log.h
+    src/nv_dds.cpp
+    include/engine/nv_dds.h
+)
+target_link_libraries(nut2mdl
+	${ALL_LIBS}
+)
+
 # archiver
 add_executable(archiver
 	src/archiver.cpp
@@ -95,13 +134,14 @@ add_executable(archiver
     include/engine/gfx_sevbo.h
     include/engine/gfx_shader.h
     include/engine/gfx_texture.h
+    include/engine/gfx_log.h
     include/engine/nv_dds.h
-    shaders/poscol.fs
-    shaders/poscol.vs
-    shaders/posnormuv.fs
-    shaders/posnormuv.vs
-    shaders/posuv.fs
-    shaders/posuv.vs
+    shaders/pos_col.fs
+    shaders/pos_col.vs
+    shaders/pos_norm_uv.fs
+    shaders/pos_norm_uv.vs
+    shaders/pos_uv.fs
+    shaders/pos_uv.vs
 )
 target_link_libraries(archiver
 	${ALL_LIBS}
@@ -113,6 +153,8 @@ add_executable(3dspacegame
     src/data_file.cpp
     src/data_archive.cpp
     src/mmh3.cpp
+    src/gfx_animation.cpp
+    src/gfx_skinning.cpp
     src/gfx_reader.cpp
     src/gfx_object.cpp
     src/gfx_primitives.cpp
@@ -127,6 +169,8 @@ add_executable(3dspacegame
     include/engine/data_file.h
     include/engine/data_archive.h
     include/engine/mmh3.h
+    include/engine/gfx_animation.h
+    include/engine/gfx_skinning.h
     include/engine/gfx_reader.h
     include/engine/gfx_object.h
     include/engine/gfx_window.h
@@ -136,12 +180,15 @@ add_executable(3dspacegame
     include/engine/gfx_shader.h
     include/engine/gfx_texture.h
     include/engine/nv_dds.h
-    shaders/poscol.fs
-    shaders/poscol.vs
-    shaders/posnormuv.fs
-    shaders/posnormuv.vs
-    shaders/posuv.fs
-    shaders/posuv.vs
+    include/engine/gfx_log.h
+    shaders/pos_col.fs
+    shaders/pos_col.vs
+    shaders/pos_norm_uv.fs
+    shaders/pos_norm_uv.vs
+    shaders/pos_uv.fs
+    shaders/pos_uv.vs
+    shaders/pos_norm_uv_bone.fs
+    shaders/pos_norm_uv_bone.vs
 )
 target_link_libraries(3dspacegame
 	${ALL_LIBS}

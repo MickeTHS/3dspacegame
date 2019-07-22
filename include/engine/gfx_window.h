@@ -28,7 +28,7 @@ private:
     bool _mouse_init;
     glm::vec2 _mouse_pos;
     std::shared_ptr<Gfx_draw_object> _crosshair;
-    std::shared_ptr<Gfx_shader> _poscol;
+    std::shared_ptr<Gfx_shader> _pos_col;
 
     float _yaw;
     float _pitch;

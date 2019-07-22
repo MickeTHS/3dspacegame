@@ -2,6 +2,9 @@
 
 #include "pch.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtx/quaternion.hpp>
+
 #define DATAFILE_FILENAME_MAX_LENGTH 64
 
 enum Data_filetype {
@@ -35,15 +38,57 @@ struct Data_texture {
     }
 };
 
+#define MDL_BONE_NAME_LENGTH 32
+
+struct Data_bone {
+    char name[MDL_BONE_NAME_LENGTH];
+    int32_t parent_index;
+    glm::fmat4x4 inv_bind_pose;
+    glm::fmat4x4 matrix;
+};
+
+struct Data_skeleton_header {
+    uint32_t num_bones;
+};
+
+struct Data_skeleton {
+    Data_skeleton_header header;
+
+    std::vector<Data_bone> bones;
+};
+
+struct Data_animation_frame {
+    float time;
+    glm::fvec3 translation;
+    glm::fquat rotation;
+};
+
+struct Data_animation_header {
+    uint32_t num_bones;
+    uint32_t num_frames;
+};
+
+struct Data_animation_bone {
+    uint32_t bone_index;
+    uint32_t frame_offset;
+    uint32_t frame_count;
+};
+
+struct Data_animation {
+    Data_animation_header header;
+        
+    std::vector<Data_animation_bone> bones;
+    std::vector<Data_animation_frame> frames;
+};
+
 struct Data_model_header {
-    float bb[24];
+    float bb[6];
     uint32_t rendertype;
     uint32_t diffuse_id;
     uint32_t spec_id;
     uint32_t emissive_id;
     uint32_t vertices_data_size;
     uint32_t indices_data_size;
-
 };
 
 struct Data_model {
@@ -76,8 +121,13 @@ struct Data_disk_file {
     Data_disk_file_header header;
     void*       data;
 
-    bool write(FILE* fp) {
+    bool write(FILE* fp, bool cast = false) {
         fwrite(&header, sizeof(Data_disk_file_header), 1, fp);
+
+        if (!cast) {
+            fwrite(data, header.filesize - sizeof(Data_disk_file_header), 1, fp);
+            return true;
+        }
 
         if (header.filetype == Data_filetype::MODEL) {
             reinterpret_cast<Data_model*>(data)->write(fp);

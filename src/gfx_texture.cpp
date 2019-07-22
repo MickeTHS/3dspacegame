@@ -3,7 +3,8 @@
 
 #include <GLFW/glfw3.h>
 
-#include "engine/gfx_texture.h"
+#include <engine/gfx_texture.h>
+#include <engine/gfx_log.h>
 
 bool Gfx_texture::load(const char* filename) {
     GLenum err;

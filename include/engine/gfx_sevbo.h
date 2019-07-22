@@ -4,6 +4,7 @@
 
 #include <GL/glew.h>
 #include <engine/gfx_shader.h>
+#include <engine/gfx_log.h>
 
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
@@ -45,6 +46,22 @@ struct SEVBO_uv {
     }
 };
 
+
+struct SEVBO_3D_pos_norm_uv_bone_vertex {
+    SEVBO_vertex pos;
+    SEVBO_vertex norm;
+    SEVBO_uv uv;
+    uint32_t bone;
+
+    SEVBO_3D_pos_norm_uv_bone_vertex() {}
+
+    SEVBO_3D_pos_norm_uv_bone_vertex(SEVBO_vertex& p, SEVBO_vertex& n, SEVBO_uv& u, uint32_t b) {
+        memcpy(&pos, &p, sizeof(SEVBO_vertex));
+        memcpy(&norm, &n, sizeof(SEVBO_vertex));
+        memcpy(&uv, &u, sizeof(SEVBO_uv));
+        bone = b;
+    }
+};
 
 struct SEVBO_3D_pos_norm_uv_vertex {
     SEVBO_vertex pos;
@@ -124,6 +141,7 @@ struct SEVBO {
     static uint32_t typesize(uint32_t type) {
         switch(type) {
             case RT_3D_POS_NORM_UV: return sizeof(SEVBO_3D_pos_norm_uv_vertex);
+            case RT_3D_POS_NORM_UV_BONE: return sizeof(SEVBO_3D_pos_norm_uv_bone_vertex);
             case RT_3D_POS_UV: return sizeof(SEVBO_3D_pos_uv_vertex);
             default: return 0;
         }
@@ -260,6 +278,7 @@ struct Gfx_draw_object {
 	std::shared_ptr<Gfx_shader> shader;
 
 	void setup(std::shared_ptr<SEVBO> object_data, std::shared_ptr<Gfx_shader> shader) {
+        Gfx_log::Gfx_GL_debug(Gfx_log::BIND_VBO, "bind vbo");
 		this->shader = shader;
 	// ifdef OPENGL
 		name = std::string(object_data->header.filename);
@@ -279,6 +298,8 @@ struct Gfx_draw_object {
 	
 
 	void draw() {
+        Gfx_log::Gfx_GL_debug(Gfx_log::DRAWOBJ_DRAW, "drawobj draw");
+
     	// ifdef OPENGL
 		glBindVertexArray(vertexArrayObjID);	// First VAO
 												// To render, we can either use glDrawElements or glDrawRangeElements

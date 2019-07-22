@@ -1,8 +1,9 @@
-#include "engine/gfx_window.h"
+﻿#include "engine/gfx_window.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
+#include <engine/gfx_log.h>
 #include <engine/gfx_primitives.h>
 
 void GLAPIENTRY
@@ -14,9 +15,30 @@ MessageCallback(GLenum source,
     const GLchar* message,
     const void* userParam)
 {
-    fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+
+    char sev[50];
+
+    switch(severity) {
+        case GL_DEBUG_SEVERITY_HIGH:
+            sprintf(sev, "HIGH!");
+            break;
+        case GL_DEBUG_SEVERITY_MEDIUM:
+            sprintf(sev, "MEDIUM");
+            break;
+        case GL_DEBUG_SEVERITY_LOW:
+            sprintf(sev, "LOW");
+            break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION:
+            return;
+            sprintf(sev, "NOTIFICATION");
+            break;
+        default:
+            sprintf(sev, "UNKNOWN");
+    }
+    
+    fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = %s, message = %s\n",
         (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
-        type, severity, message);
+        type, sev, message);
 }
 
 Gfx_window::Gfx_window() : _window(NULL), _mouse_init(false), _yaw(0.0f), _pitch(0.0f) {
@@ -85,7 +107,7 @@ bool Gfx_window::init() {
     }
 
     glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -114,7 +136,7 @@ bool Gfx_window::init() {
     glfwSetInputMode(_window, GLFW_STICKY_KEYS, GL_TRUE);
 
     // During init, enable debug output
-    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(MessageCallback, 0);
 
     // Dark blue background
@@ -146,7 +168,7 @@ bool Gfx_window::init() {
     glfwSetCursorPosCallback(_window, movefunc);
 
     Gfx_shader_store::get_instance().init();
-    _poscol = Gfx_shader_store::get_instance().get_shader("poscol");
+    _pos_col = Gfx_shader_store::get_instance().get_shader("pos_col");
     
     std::shared_ptr<Gfx_draw_object> crosshair = std::make_shared<Gfx_draw_object>();
 
@@ -227,7 +249,7 @@ bool Gfx_window::init() {
     vbo1->setup();
 
     _crosshair = std::make_shared<Gfx_draw_object>();
-    _crosshair->setup(vbo1, _poscol);
+    _crosshair->setup(vbo1, _pos_col);
     
     return true;
 
@@ -240,14 +262,15 @@ bool Gfx_window::run(std::function<void()> drawcall) {
 
 
     while(true) {
+        Gfx_log::Gfx_GL_debug(Gfx_log::MAIN_LOOP, "window render loop");
         // Swap buffers
         // Dark blue background
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(0.0f, 0.0f, 0.3f, 1.0f);
 
         glm::mat4 cross_mvp(1.0);
-        _poscol->m4_mvp = cross_mvp;
-        _poscol->activate();
+        _pos_col->m4_mvp = cross_mvp;
+        _pos_col->activate();
         _crosshair->draw();
 
         drawcall();
