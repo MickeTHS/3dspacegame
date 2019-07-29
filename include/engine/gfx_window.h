@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <engine/gfx_camera.h>
 #include <engine/gfx_sevbo.h>
+#include "win32/timer.h"
 
 struct GLFWwindow;
 
@@ -12,11 +13,11 @@ struct Gfx_window {
     Gfx_window();
     virtual ~Gfx_window();
 
-    bool init();
+    bool init(std::shared_ptr<Gfx_timer> timer);
     bool run(std::function<void()> drawcall);
     void mouse_button_pressed(int button, int action, int mods);
     void mouse_moved(double x, double y);
-
+    void key_action(int key, int action, int mods);
     float yaw();
     float pitch();
 
@@ -32,4 +33,9 @@ private:
 
     float _yaw;
     float _pitch;
+
+    float _width;
+    float _height;
+
+    std::shared_ptr<Gfx_timer> _timer;
 };

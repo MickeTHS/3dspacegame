@@ -44,10 +44,16 @@ void Gfx_timer::frame()
 
 	_start_time = current_time;
 
+    _total_time += _frame_time;
+
 	return;
 }
 
 float Gfx_timer::get_time()
 {
-	return _frame_time;
+	return _frame_time / 1000.0f;
+}
+
+float Gfx_timer::get_total_time() {
+    return _total_time;
 }

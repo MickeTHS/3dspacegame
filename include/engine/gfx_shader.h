@@ -27,7 +27,7 @@ enum Gfx_RT_type {
 struct SEVBO;
 
 struct Gfx_shader {
-	int32_t programId;
+	int32_t program_id;
 	int32_t u_mvp;
 	int32_t u_tex0;
     int32_t u_highlight;
@@ -59,7 +59,7 @@ struct Gfx_shader {
         std::string nn = name;
 
         // Use our shader
-        glUseProgram(programId);
+        glUseProgram(program_id);
 
         glUniformMatrix4fv(u_mvp, 1, GL_FALSE, &m4_mvp[0][0]);
         glUniformMatrix4fv(u_model, 1, GL_FALSE, &m4_model[0][0]);
@@ -73,7 +73,7 @@ struct Gfx_shader {
             //m4v_pal[0] = glm::translate(m4v_pal[0], offset);
             //m4v_pal[1] = glm::translate(m4v_pal[0], offset);
 
-            glProgramUniformMatrix4fv(programId, u_pal, m4v_pal.size(), GL_FALSE, (GLfloat*)m4v_pal.data());
+            glProgramUniformMatrix4fv(program_id, u_pal, m4v_pal.size(), GL_FALSE, (GLfloat*)m4v_pal.data());
             //glUniformMatrix4fv(u_pal, m4v_pal.size(), GL_FALSE, (GLfloat*)&m4v_pal[2][0][0]);
         }
 

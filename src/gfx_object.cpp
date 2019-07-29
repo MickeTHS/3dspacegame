@@ -1,10 +1,14 @@
 #include <engine/gfx_object.h>
-
+#include <engine/data_file.h>
 #include <glm/gtx/intersect.hpp>
 
 Gfx_object::Gfx_object(std::shared_ptr<SEVBO> vbo, std::shared_ptr<Gfx_draw_object> object) 
-: _vbo(vbo), _draw_obj(object) {
+: _vbo(vbo), _draw_obj(object), _animator(nullptr) {
 
+}
+
+void Gfx_object::set_animator(std::shared_ptr<Gfx_animator> animator) {
+    _animator = animator;
 }
 
 void Gfx_object::set_skeleton(std::shared_ptr<Gfx_skeleton> skel) {
@@ -13,6 +17,24 @@ void Gfx_object::set_skeleton(std::shared_ptr<Gfx_skeleton> skel) {
 
 std::shared_ptr<Gfx_draw_object>& Gfx_object::get_draw_obj() {
     return _draw_obj;
+}
+
+void Gfx_object::set_animation(const char* animation_name) {
+    if (_animator == nullptr) {
+        return;
+    }
+
+    auto anim = _animator->get_animation(animation_name);
+
+    assert(anim);
+
+    _animation_state = _animator->make_animation_state(_skeleton, animation_name);
+
+    assert(_animation_state);
+}
+
+std::shared_ptr<Gfx_animation_state>& Gfx_object::get_animation_state() {
+    return _animation_state;
 }
 
 void Gfx_object::calc_bounds(std::vector<glm::vec3>& verts) {

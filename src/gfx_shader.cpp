@@ -26,8 +26,8 @@ bool Gfx_shader_store::init() {
 GLint LoadShaders(const char * vertex_file_path, const char * fragment_file_path) {
 
     // Create the shaders
-    GLint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-    GLint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+    GLint vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
+    GLint fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
 
     std::string vs_path = SHADER_PATH + std::string(vertex_file_path);
     std::string fs_path = SHADER_PATH + std::string(fragment_file_path);
@@ -65,15 +65,15 @@ GLint LoadShaders(const char * vertex_file_path, const char * fragment_file_path
     // Compile Vertex Shader
     printf("Compiling shader : %s\n", vertex_file_path);
     char const * VertexSourcePointer = VertexShaderCode.c_str();
-    glShaderSource(VertexShaderID, 1, &VertexSourcePointer, NULL);
-    glCompileShader(VertexShaderID);
+    glShaderSource(vertex_shader_id, 1, &VertexSourcePointer, NULL);
+    glCompileShader(vertex_shader_id);
 
     // Check Vertex Shader
-    glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
-    glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+    glGetShaderiv(vertex_shader_id, GL_COMPILE_STATUS, &Result);
+    glGetShaderiv(vertex_shader_id, GL_INFO_LOG_LENGTH, &InfoLogLength);
     if (InfoLogLength > 0) {
         std::vector<char> VertexShaderErrorMessage(InfoLogLength + 1);
-        glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
+        glGetShaderInfoLog(vertex_shader_id, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
         printf("%s\n", &VertexShaderErrorMessage[0]);
     }
 
@@ -82,15 +82,15 @@ GLint LoadShaders(const char * vertex_file_path, const char * fragment_file_path
     // Compile Fragment Shader
     printf("Compiling shader : %s\n", fragment_file_path);
     char const * FragmentSourcePointer = FragmentShaderCode.c_str();
-    glShaderSource(FragmentShaderID, 1, &FragmentSourcePointer, NULL);
-    glCompileShader(FragmentShaderID);
+    glShaderSource(fragment_shader_id, 1, &FragmentSourcePointer, NULL);
+    glCompileShader(fragment_shader_id);
 
     // Check Fragment Shader
-    glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
-    glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+    glGetShaderiv(fragment_shader_id, GL_COMPILE_STATUS, &Result);
+    glGetShaderiv(fragment_shader_id, GL_INFO_LOG_LENGTH, &InfoLogLength);
     if (InfoLogLength > 0) {
         std::vector<char> FragmentShaderErrorMessage(InfoLogLength + 1);
-        glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
+        glGetShaderInfoLog(fragment_shader_id, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
         printf("%s\n", &FragmentShaderErrorMessage[0]);
     }
 
@@ -98,35 +98,35 @@ GLint LoadShaders(const char * vertex_file_path, const char * fragment_file_path
 
     // Link the program
     printf("Linking program\n");
-    GLuint ProgramID = glCreateProgram();
-    glAttachShader(ProgramID, VertexShaderID);
-    glAttachShader(ProgramID, FragmentShaderID);
-    glLinkProgram(ProgramID);
+    GLuint program_id = glCreateProgram();
+    glAttachShader(program_id, vertex_shader_id);
+    glAttachShader(program_id, fragment_shader_id);
+    glLinkProgram(program_id);
 
     // Check the program
-    glGetProgramiv(ProgramID, GL_LINK_STATUS, &Result);
-    glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+    glGetProgramiv(program_id, GL_LINK_STATUS, &Result);
+    glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &InfoLogLength);
     if (InfoLogLength > 0) {
         std::vector<char> ProgramErrorMessage(InfoLogLength + 1);
-        glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
+        glGetProgramInfoLog(program_id, InfoLogLength, NULL, &ProgramErrorMessage[0]);
         printf("%s\n", &ProgramErrorMessage[0]);
     }
 
 
-    glDetachShader(ProgramID, VertexShaderID);
-    glDetachShader(ProgramID, FragmentShaderID);
+    glDetachShader(program_id, vertex_shader_id);
+    glDetachShader(program_id, fragment_shader_id);
 
-    glDeleteShader(VertexShaderID);
-    glDeleteShader(FragmentShaderID);
+    glDeleteShader(vertex_shader_id);
+    glDeleteShader(fragment_shader_id);
 
-    return ProgramID;
+    return program_id;
 }
 
 
 bool Gfx_RT_3D_pos_col::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t vertexBufferId, uint32_t indexBufferId) {
     
-    uint32_t pos = glGetAttribLocation(programId, "pos");
-    uint32_t col = glGetAttribLocation(programId, "col");
+    uint32_t pos = glGetAttribLocation(program_id, "pos");
+    uint32_t col = glGetAttribLocation(program_id, "col");
 
     glEnableVertexAttribArray(pos);
     glEnableVertexAttribArray(col);
@@ -148,10 +148,10 @@ bool Gfx_RT_3D_pos_col::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t vertexBuffe
 
 bool Gfx_RT_3D_pos_norm_uv_bone::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t vertexBufferId, uint32_t indexBufferId) {
 
-    uint32_t pos = glGetAttribLocation(programId, "v_pos");
-    uint32_t norm = glGetAttribLocation(programId, "v_norm");
-    uint32_t uv = glGetAttribLocation(programId, "v_uv");
-    uint32_t bone = glGetAttribLocation(programId, "f_bone");
+    uint32_t pos = glGetAttribLocation(program_id, "v_pos");
+    uint32_t norm = glGetAttribLocation(program_id, "v_norm");
+    uint32_t uv = glGetAttribLocation(program_id, "v_uv");
+    uint32_t bone = glGetAttribLocation(program_id, "f_bone");
 
     glEnableVertexAttribArray(pos);
     glEnableVertexAttribArray(norm);
@@ -186,9 +186,9 @@ bool Gfx_RT_3D_pos_norm_uv_bone::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t ve
 
 bool Gfx_RT_3D_pos_norm_uv::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t vertexBufferId, uint32_t indexBufferId) {
 
-    uint32_t pos = glGetAttribLocation(programId, "pos");
-    uint32_t norm = glGetAttribLocation(programId, "norm");
-    uint32_t uv = glGetAttribLocation(programId, "uv");
+    uint32_t pos = glGetAttribLocation(program_id, "pos");
+    uint32_t norm = glGetAttribLocation(program_id, "norm");
+    uint32_t uv = glGetAttribLocation(program_id, "uv");
 
     glEnableVertexAttribArray(pos);
     glEnableVertexAttribArray(norm);
@@ -212,8 +212,8 @@ bool Gfx_RT_3D_pos_norm_uv::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t vertexB
 
 bool Gfx_RT_3D_pos_uv::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t vertexBufferId, uint32_t indexBufferId) {
 
-    uint32_t pos = glGetAttribLocation(programId, "pos");
-    uint32_t tex = glGetAttribLocation(programId, "uv");
+    uint32_t pos = glGetAttribLocation(program_id, "pos");
+    uint32_t tex = glGetAttribLocation(program_id, "uv");
 
     glEnableVertexAttribArray(pos);
     glEnableVertexAttribArray(tex);
@@ -234,8 +234,8 @@ bool Gfx_RT_3D_pos_uv::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t vertexBuffer
 }
 
 bool Gfx_RT_3D_pos_uv_alpha::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t vertexBufferId, uint32_t indexBufferId) {
-    uint32_t pos = glGetAttribLocation(programId, "pos");
-    uint32_t tex = glGetAttribLocation(programId, "uv");
+    uint32_t pos = glGetAttribLocation(program_id, "pos");
+    uint32_t tex = glGetAttribLocation(program_id, "uv");
 
     glEnableVertexAttribArray(pos);
     glEnableVertexAttribArray(tex);
@@ -264,20 +264,20 @@ bool Gfx_shader::setup(const char* name_, const char* vsfile, const char* fsfile
 
     name = std::string(name_);
 
-    programId = LoadShaders(vsfile, fsfile);
+    program_id = LoadShaders(vsfile, fsfile);
 
-    if (programId < 0) {
+    if (program_id < 0) {
         printf("Gfx_shader: failure to load shader: %s, %s\n", vsfile, fsfile);
         return false;
     }
 
-    u_mvp = glGetUniformLocation(programId, "mvp");
-    u_model = glGetUniformLocation(programId, "model");
-    u_model_view = glGetUniformLocation(programId, "model_view");
-    u_tex0 = glGetUniformLocation(programId, "tex0");
-    u_highlight = glGetUniformLocation(programId, "highlight");
-    u_light0pos = glGetUniformLocation(programId, "light0pos");
-    u_pal = glGetUniformLocation(programId, "pal");
+    u_mvp = glGetUniformLocation(program_id, "mvp");
+    u_model = glGetUniformLocation(program_id, "model");
+    u_model_view = glGetUniformLocation(program_id, "model_view");
+    u_tex0 = glGetUniformLocation(program_id, "tex0");
+    u_highlight = glGetUniformLocation(program_id, "highlight");
+    u_light0pos = glGetUniformLocation(program_id, "light0pos");
+    u_pal = glGetUniformLocation(program_id, "pal");
 
     if (u_mvp < 0) {
         printf("Gfx_shader: Notice: Shader without mvp\n");

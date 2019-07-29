@@ -7,6 +7,7 @@
 #include <engine/gfx_shader.h>
 #include <engine/gfx_texture.h>
 #include <engine/gfx_skinning.h>
+#include <engine/gfx_animation.h>
 
 enum Gfx_obj_flags {
     highlight = 0
@@ -20,7 +21,10 @@ struct Gfx_object {
 
     void calc_bounds(std::vector<glm::vec3>& verts);
 
+    void set_animator(std::shared_ptr<Gfx_animator> animator);
     void set_skeleton(std::shared_ptr<Gfx_skeleton> skel);
+
+    void set_animation(const char* animation_name);
 
     void update();
     void set_pos(glm::vec3& pos);
@@ -30,6 +34,8 @@ struct Gfx_object {
     void set_flag(uint8_t index, bool on);
     
     glm::vec3 local_bounds[2];
+
+    std::shared_ptr<Gfx_animation_state>& get_animation_state();
 
 private:
     uint32_t _flags;
@@ -44,4 +50,6 @@ private:
     std::shared_ptr<SEVBO> _vbo;
     std::shared_ptr<Gfx_draw_object> _draw_obj;
     std::shared_ptr<Gfx_skeleton> _skeleton;
+    std::shared_ptr<Gfx_animator> _animator;
+    std::shared_ptr<Gfx_animation_state> _animation_state;
 };

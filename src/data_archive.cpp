@@ -562,22 +562,22 @@ std::shared_ptr<Gfx_animation> Data_archive::load_animation_file(const char* nam
 
             _files.push_back(df);
 
-            Data_animation dtm;
+            Data_animation *dtm = new Data_animation();
 
-            memcpy(&dtm.header, &((uint8_t*)df->data)[0], sizeof(Data_animation_header));
+            memcpy(&dtm->header, &((uint8_t*)df->data)[0], sizeof(Data_animation_header));
 
             uint32_t offset = sizeof(Data_animation_header);
             
-            dtm.bones.resize(dtm.header.num_bones);
-            dtm.frames.resize(dtm.header.num_frames);
+            dtm->bones.resize(dtm->header.num_bones);
+            dtm->frames.resize(dtm->header.num_frames);
 
-            memcpy(&dtm.bones[0], &((uint8_t*)df->data)[offset], sizeof(Data_animation_bone) * dtm.bones.size());
-            offset += dtm.bones.size() * sizeof(Data_animation_bone);
+            memcpy(&dtm->bones[0], &((uint8_t*)df->data)[offset], sizeof(Data_animation_bone) * dtm->bones.size());
+            offset += dtm->bones.size() * sizeof(Data_animation_bone);
 
-            memcpy(&dtm.frames[0], &((uint8_t*)df->data)[offset], sizeof(Data_animation_frame) * dtm.frames.size());
+            memcpy(&dtm->frames[0], &((uint8_t*)df->data)[offset], sizeof(Data_animation_frame) * dtm->frames.size());
 
-            std::shared_ptr<Gfx_animation> animation = std::make_shared<Gfx_animation>();
-            animation->animationdata = &dtm;
+            std::shared_ptr<Gfx_animation> animation = std::make_shared<Gfx_animation>(df->header.filename);
+            animation->animationdata = dtm;
             
             return animation;
         }

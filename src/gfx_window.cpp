@@ -41,7 +41,7 @@ MessageCallback(GLenum source,
         type, sev, message);
 }
 
-Gfx_window::Gfx_window() : _window(NULL), _mouse_init(false), _yaw(0.0f), _pitch(0.0f) {
+Gfx_window::Gfx_window() : _window(NULL), _mouse_init(false), _yaw(0.0f), _pitch(0.0f), _timer(nullptr) {
     
 }
 
@@ -59,6 +59,25 @@ void Gfx_window::mouse_button_pressed(int button, int action, int mods) {
     }
     else if (action == GLFW_RELEASE) {
         //printf("up\n");
+    }
+
+}
+
+
+void Gfx_window::key_action(int key, int action, int mods) {
+    bool press = action == GLFW_PRESS || action == GLFW_REPEAT;
+
+    if (key == GLFW_KEY_W) {
+        _camera.set_move_forward(press);
+    }
+    if (key == GLFW_KEY_A) {
+        _camera.set_move_left(press);
+    }
+    if (key == GLFW_KEY_S) {
+        _camera.set_move_backward(press);
+    }
+    if (key == GLFW_KEY_D) {
+        _camera.set_move_right(press);
     }
 
 }
@@ -82,7 +101,7 @@ void Gfx_window::mouse_moved(double x, double y) {
 
     //always compute delta
     //mousePosition is the last mouse position
-    glm::vec2 mouse_delta = glm::vec2(x, y) - _mouse_pos;
+    glm::vec2 mouse_delta = glm::vec2(_width/2.0f, _height/2.0f) - glm::vec2(x, y);
 
     const float sensitivity_x = 0.025f;
     const float sensitivity_y = 0.025f;
@@ -93,12 +112,14 @@ void Gfx_window::mouse_moved(double x, double y) {
 
     _mouse_pos = glm::vec2(x, y);
 
-    _camera.set_pitch(_pitch);
-    _camera.set_yaw(_yaw);
-    _camera.update();
+    _camera.update_direction(mouse_delta.x, mouse_delta.y);
+
+    glfwSetCursorPos(_window, _width/2.0f, _height/2.0f);
 }
 
-bool Gfx_window::init() {
+bool Gfx_window::init(std::shared_ptr<Gfx_timer> timer) {
+    _timer = timer;
+    
     // Initialise GLFW
     if (!glfwInit())
     {
@@ -112,7 +133,12 @@ bool Gfx_window::init() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+    
+
     uint32_t width = 1024, height = 768;
+
+    _width = width;
+    _height = height;
 
     // Open a window and create its OpenGL context
     _window = glfwCreateWindow(width, height, "3dgame", NULL, NULL);
@@ -124,7 +150,8 @@ bool Gfx_window::init() {
     glfwMakeContextCurrent(_window);
     
     _camera.init((float)width, (float)height);
-
+    
+    
     // Initialize GLEW
     glewExperimental = true; // Needed for core profile
     if (glewInit() != GLEW_OK) {
@@ -134,6 +161,9 @@ bool Gfx_window::init() {
 
     // Ensure we can capture the escape key being pressed below
     glfwSetInputMode(_window, GLFW_STICKY_KEYS, GL_TRUE);
+
+    // hide the cursor
+    glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     // During init, enable debug output
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -154,6 +184,11 @@ bool Gfx_window::init() {
 
     glfwSetWindowUserPointer(_window, this);
 
+    auto keyFunc = [](GLFWwindow* w, int key, int scancode, int action, int mods)
+    {
+        static_cast<Gfx_window*>(glfwGetWindowUserPointer(w))->key_action(key, action, mods);
+    };
+    
     auto btnfunc = [](GLFWwindow* w, int button, int action, int mods)
     {
         static_cast<Gfx_window*>(glfwGetWindowUserPointer(w))->mouse_button_pressed(button, action, mods);
@@ -166,6 +201,7 @@ bool Gfx_window::init() {
 
     glfwSetMouseButtonCallback(_window, btnfunc);
     glfwSetCursorPosCallback(_window, movefunc);
+    glfwSetKeyCallback(_window, keyFunc);
 
     Gfx_shader_store::get_instance().init();
     _pos_col = Gfx_shader_store::get_instance().get_shader("pos_col");
@@ -262,6 +298,8 @@ bool Gfx_window::run(std::function<void()> drawcall) {
 
 
     while(true) {
+        _camera.update(_timer->get_time());
+
         Gfx_log::Gfx_GL_debug(Gfx_log::MAIN_LOOP, "window render loop");
         // Swap buffers
         // Dark blue background
@@ -272,7 +310,7 @@ bool Gfx_window::run(std::function<void()> drawcall) {
         _pos_col->m4_mvp = cross_mvp;
         _pos_col->activate();
         _crosshair->draw();
-
+        
         drawcall();
         glfwSwapBuffers(_window);
         glfwPollEvents();

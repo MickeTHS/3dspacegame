@@ -52,6 +52,9 @@ add_executable(3dspacegame
         src/gfx_texture.cpp
         src/gfx_sevbo.cpp
         src/gfx_window.cpp
+        src/game_brick_type.cpp
+        src/game_celestial.cpp
+        src/game_construct.cpp
         src/nv_dds.cpp
         macos/timer.cpp
 		macos/timer.h
@@ -63,6 +66,9 @@ add_executable(3dspacegame
         include/engine/gfx_sevbo.h
         include/engine/gfx_shader.h
         include/engine/gfx_texture.h
+        include/engine/game_brick_type.h
+        include/engine/game_construct.h
+        include/engine/game_celestrial.h
         include/engine/nv_dds.h
 )
 target_link_libraries(3dspacegame
@@ -91,10 +97,21 @@ ADD_EXECUTABLE(nut2mdl
     include/engine/data_archive.h
     src/data_file.cpp
     src/data_archive.cpp
-
+    src/game_brick_type.cpp
+    src/game_celestial.cpp
+    src/game_construct.cpp
+        
     src/gfx_object.cpp
     src/gfx_texture.cpp
 	src/gfx_sevbo.cpp
+    src/gfx_animation.cpp
+    src/gfx_skinning.cpp
+    include/3dspacegame/game_brick_type.h
+    include/3dspacegame/game_celestial.h
+    include/3dspacegame/game_construct.h
+    include/engine/gfx_animation.h
+    include/engine/gfx_skinning.h
+    
     include/engine/gfx_object.h
     include/engine/gfx_texture.h
     include/engine/gfx_sevbo.h
@@ -163,6 +180,12 @@ add_executable(3dspacegame
 	src/gfx_texture.cpp
 	src/gfx_sevbo.cpp
     src/gfx_window.cpp
+    
+    src/game_brick_type.cpp
+    src/game_celestial.cpp
+    src/game_construct.cpp
+    src/game_brick_def.cpp
+    
 	src/nv_dds.cpp
 	win32/timer.cpp
     win32/timer.h
@@ -179,6 +202,10 @@ add_executable(3dspacegame
     include/engine/gfx_sevbo.h
     include/engine/gfx_shader.h
     include/engine/gfx_texture.h
+    include/3dspacegame/game_celestial.h
+    include/3dspacegame/game_brick_type.h
+    include/3dspacegame/game_construct.h
+    include/3dspacegame/game_brick_def.h
     include/engine/nv_dds.h
     include/engine/gfx_log.h
     shaders/pos_col.fs
@@ -203,7 +230,8 @@ SOURCE_GROUP(win32 REGULAR_EXPRESSION ".*/win32/.*" )
 endif()
 
 SOURCE_GROUP(engine REGULAR_EXPRESSION ".*/engine/.*" )
-SOURCE_GROUP(headers REGULAR_EXPRESSION ".*/include/engine/.*" )
+SOURCE_GROUP(game_headers REGULAR_EXPRESSION ".*/include/3dspacegame/.*" )
+SOURCE_GROUP(engine_headers REGULAR_EXPRESSION ".*/include/engine/.*" )
 #SOURCE_GROUP(imgui REGULAR_EXPRESSION ".*/external/imgui/.*" )
 SOURCE_GROUP(shaders REGULAR_EXPRESSION ".*/.*(vs|fs)$" )
 
