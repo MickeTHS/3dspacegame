@@ -25,12 +25,14 @@ glm::vec2 perp_ccw(glm::vec2& v) {
 Gfx_skysphere::Gfx_skysphere(std::shared_ptr<Gfx_camera> camera) {
     _shader = Gfx_shader_store::get_instance().get_shader("pos_uv");
     assert(_shader);
+    _tex = std::make_shared<Gfx_texture>();
+    _tex->load("D:\\projects\\3dspacegame\\offline_assets\\textures\\stars_d.dds");
 
     _camera = camera;
 
-    uint32_t num_stars = 512;
+    uint32_t num_stars = 10000;
 
-    std::vector<uint32_t> ratios = { uint32_t( num_stars * 0.60 ), uint32_t ( num_stars * 0.20 ) , uint32_t (num_stars * 0.15), uint32_t ( num_stars * 0.05 ) };
+    std::vector<uint32_t> ratios = { uint32_t( num_stars * 0.70 ), uint32_t ( num_stars * 0.20 ) , uint32_t (num_stars * 0.05), uint32_t ( num_stars * 0.05 ) };
 
     std::vector<std::vector<float>> uvs = { 
         // smallest stars on row 0
@@ -76,7 +78,7 @@ Gfx_skysphere::Gfx_skysphere(std::shared_ptr<Gfx_camera> camera) {
         
         glm::vec3 v_c;
         
-        random_sphere_point(v_c.x, v_c.y, v_c.z, 50.0f);
+        random_sphere_point(v_c.x, v_c.y, v_c.z, 30.0f);
 
         float quadsize = 0.01f;
 
@@ -111,7 +113,7 @@ Gfx_skysphere::Gfx_skysphere(std::shared_ptr<Gfx_camera> camera) {
             + cam_up * p3.y;
 
 
-        int uv_start = r * 3;
+        int uv_start = r * 4;
 
         SEVBO_uv top_left(uvs[s][uv_start], uvs[s][uv_start+1]);
         SEVBO_uv bottom_right(uvs[s][uv_start+2], uvs[s][uv_start + 3]);
@@ -121,24 +123,31 @@ Gfx_skysphere::Gfx_skysphere(std::shared_ptr<Gfx_camera> camera) {
         vert0.pos.x = v0.x;
         vert0.pos.y = v0.y;
         vert0.pos.z = v0.z;
+        vert0.uv = top_left;
 
         SEVBO_3D_pos_uv_vertex vert1;
 
         vert1.pos.x = v1.x;
         vert1.pos.y = v1.y;
         vert1.pos.z = v1.z;
+        vert1.uv.u = bottom_right.u;
+        vert1.uv.v = top_left.v;
+
 
         SEVBO_3D_pos_uv_vertex vert2;
 
         vert2.pos.x = v2.x;
         vert2.pos.y = v2.y;
         vert2.pos.z = v2.z;
+        vert2.uv = bottom_right;
 
         SEVBO_3D_pos_uv_vertex vert3;
 
         vert3.pos.x = v3.x;
         vert3.pos.y = v3.y;
         vert3.pos.z = v3.z;
+        vert3.uv.u = top_left.u;
+        vert3.uv.v = bottom_right.v;
 
         vbo->vertices.push_back(vert0);
         vbo->vertices.push_back(vert1);
@@ -189,6 +198,7 @@ void Gfx_skysphere::draw(float delta) {
     glm::mat4 proj = _camera->get_proj();
     glm::mat4 view = _camera->get_view();
     
+    _tex->bind(_shader);
     _shader->m4_mvp = proj * view * _shader->m4_model;
     _shader->m4_proj_view = proj * view;
 

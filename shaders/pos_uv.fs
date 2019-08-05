@@ -9,6 +9,6 @@ uniform sampler2D tex0;
 uniform vec4      highlight;
 
 void main(){
-    //color = texture( tex0, out_uv ).rgba * highlight;;
-    color = vec4(1.0, 1.0, 1.0, 1.0);
+    color = texture( tex0, out_uv ).rgba;
+    //color = vec4(1.0, 1.0, 1.0, 1.0);
 }
