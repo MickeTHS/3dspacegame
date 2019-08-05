@@ -98,7 +98,7 @@ int main(char** argv, int argc) {
             pos_norm_uv_bone->v4_highlight_color = glm::vec4(0.5, 0.5, 0.5, 1);
         }
 
-        //gfx_obj->get_draw_obj()->draw();
+        gfx_obj->get_draw_obj()->draw();
     };
 
     win.run(cb);

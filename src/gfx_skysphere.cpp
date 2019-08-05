@@ -187,9 +187,8 @@ Gfx_skysphere::~Gfx_skysphere() {
 void Gfx_skysphere::draw(float delta) {
     _shader->m4_proj = _camera->get_proj();
     _shader->m4_view = _camera->get_view();
-    glm::vec3 p(0, 0, 0);
-
-    _shader->m4_model = glm::translate(glm::mat4(1.0f), p);
+    
+    _shader->m4_model = glm::translate(glm::mat4(1.0), _camera->get_pos());
     //_shader->m4_model_view = _camera->get_view() * _shader->m4_model;
     //_shader->m4_rotation = glm::mat4(1.0);
 
