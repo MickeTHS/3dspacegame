@@ -20,6 +20,8 @@ struct Gfx_camera {
     glm::vec3 get_lookat();
     glm::vec3 get_pos();
 
+    void set_lookat(glm::vec3 point);
+
     void update_direction(float mouse_x_pos, float mouse_y_pos);
 
 private:

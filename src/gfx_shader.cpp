@@ -14,11 +14,18 @@ bool Gfx_shader_store::init() {
     pos_norm_uv->setup();
     auto pos_norm_uv_bone = std::make_shared<Gfx_RT_3D_pos_norm_uv_bone>();
     pos_norm_uv_bone->setup();
+    auto pos_uv_bb = std::make_shared<Gfx_RT_3D_pos_uv_bb>();
+    pos_uv_bb->setup();
+    auto particle = std::make_shared<Gfx_RT_3D_particle>();
+    particle->setup();
+
 
     add_shader(pos_col);
     add_shader(pos_norm_uv);
     add_shader(pos_uv);
     add_shader(pos_norm_uv_bone);
+    add_shader(pos_uv_bb);
+    add_shader(particle);
 
     return true;
 }
@@ -123,6 +130,15 @@ GLint LoadShaders(const char * vertex_file_path, const char * fragment_file_path
 }
 
 
+bool Gfx_RT_3D_particle::bindParticlesVBO(std::shared_ptr<SEVBO> vbo, uint32_t buffer_id) {
+    
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer_id);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(SEVBO_3D_particle_inst) * vbo->num_vertices, vbo->vert_data);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    return true;
+}
+
 bool Gfx_RT_3D_pos_col::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t vertexBufferId, uint32_t indexBufferId) {
     
     uint32_t pos = glGetAttribLocation(program_id, "pos");
@@ -136,6 +152,30 @@ bool Gfx_RT_3D_pos_col::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t vertexBuffe
 
     glVertexAttribPointer(pos, 3, GL_FLOAT, GL_FALSE, sizeof(SEVBO_3D_pos_col_vertex), BUFFER_OFFSET(0));
     glVertexAttribPointer(col, 3, GL_FLOAT, GL_FALSE, sizeof(SEVBO_3D_pos_col_vertex), BUFFER_OFFSET(sizeof(SEVBO_vertex)));
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferId);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * vbo->num_indices, vbo->indice_data, GL_STATIC_DRAW);
+
+    glBindVertexArray(0);
+
+    return true;
+}
+
+
+bool Gfx_RT_3D_pos_uv_bb::bindVBO(std::shared_ptr<SEVBO> vbo, uint32_t vertexBufferId, uint32_t indexBufferId) {
+
+    uint32_t pos = glGetAttribLocation(program_id, "v_pos");
+    uint32_t uv = glGetAttribLocation(program_id, "v_uv");
+    
+    glEnableVertexAttribArray(pos);
+    glEnableVertexAttribArray(uv);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferId);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(SEVBO_3D_pos_uv_bb_vertex) * vbo->num_vertices, vbo->vert_data, GL_STATIC_DRAW);
+    //glEnableVertexAttribArray(0);    // We like submitting vertices on stream 0 for no special reason
+    glVertexAttribPointer(pos, 3, GL_FLOAT, GL_FALSE, sizeof(SEVBO_3D_pos_uv_bb_vertex), BUFFER_OFFSET(0));
+    glVertexAttribPointer(uv, 2, GL_FLOAT, GL_FALSE, sizeof(SEVBO_3D_pos_uv_bb_vertex), BUFFER_OFFSET(sizeof(SEVBO_vertex)));
+    
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferId);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * vbo->num_indices, vbo->indice_data, GL_STATIC_DRAW);
@@ -273,11 +313,15 @@ bool Gfx_shader::setup(const char* name_, const char* vsfile, const char* fsfile
 
     u_mvp = glGetUniformLocation(program_id, "mvp");
     u_model = glGetUniformLocation(program_id, "model");
+    u_view = glGetUniformLocation(program_id, "view");
     u_model_view = glGetUniformLocation(program_id, "model_view");
+    u_proj_view = glGetUniformLocation(program_id, "proj_view");
+    u_proj = glGetUniformLocation(program_id, "proj");
     u_tex0 = glGetUniformLocation(program_id, "tex0");
     u_highlight = glGetUniformLocation(program_id, "highlight");
     u_light0pos = glGetUniformLocation(program_id, "light0pos");
     u_pal = glGetUniformLocation(program_id, "pal");
+    u_rotation = glGetUniformLocation(program_id, "rotation");
 
     if (u_mvp < 0) {
         printf("Gfx_shader: Notice: Shader without mvp\n");

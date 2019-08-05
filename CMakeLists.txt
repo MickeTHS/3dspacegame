@@ -180,6 +180,8 @@ add_executable(3dspacegame
 	src/gfx_texture.cpp
 	src/gfx_sevbo.cpp
     src/gfx_window.cpp
+    src/gfx_skysphere.cpp
+    src/gfx_particle.cpp
     
     src/game_brick_type.cpp
     src/game_celestial.cpp
@@ -202,6 +204,9 @@ add_executable(3dspacegame
     include/engine/gfx_sevbo.h
     include/engine/gfx_shader.h
     include/engine/gfx_texture.h
+    include/engine/gfx_skysphere.h
+    include/engine/gfx_particle.h
+    
     include/3dspacegame/game_celestial.h
     include/3dspacegame/game_brick_type.h
     include/3dspacegame/game_construct.h
@@ -214,8 +219,12 @@ add_executable(3dspacegame
     shaders/pos_norm_uv.vs
     shaders/pos_uv.fs
     shaders/pos_uv.vs
+    shaders/pos_uv_bb.fs
+    shaders/pos_uv_bb.vs
     shaders/pos_norm_uv_bone.fs
     shaders/pos_norm_uv_bone.vs
+    shaders/particle.fs
+    shaders/particle.vs
 )
 target_link_libraries(3dspacegame
 	${ALL_LIBS}

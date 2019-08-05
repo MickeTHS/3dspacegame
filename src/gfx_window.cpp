@@ -42,7 +42,7 @@ MessageCallback(GLenum source,
 }
 
 Gfx_window::Gfx_window() : _window(NULL), _mouse_init(false), _yaw(0.0f), _pitch(0.0f), _timer(nullptr) {
-    
+    _camera = std::make_shared<Gfx_camera>();
 }
 
 Gfx_window::~Gfx_window() {
@@ -68,16 +68,16 @@ void Gfx_window::key_action(int key, int action, int mods) {
     bool press = action == GLFW_PRESS || action == GLFW_REPEAT;
 
     if (key == GLFW_KEY_W) {
-        _camera.set_move_forward(press);
+        _camera->set_move_forward(press);
     }
     if (key == GLFW_KEY_A) {
-        _camera.set_move_left(press);
+        _camera->set_move_left(press);
     }
     if (key == GLFW_KEY_S) {
-        _camera.set_move_backward(press);
+        _camera->set_move_backward(press);
     }
     if (key == GLFW_KEY_D) {
-        _camera.set_move_right(press);
+        _camera->set_move_right(press);
     }
 
 }
@@ -86,7 +86,7 @@ float Gfx_window::yaw() { return _yaw; }
 
 float Gfx_window::pitch() { return _pitch; }
 
-Gfx_camera& Gfx_window::get_camera() {
+std::shared_ptr<Gfx_camera> Gfx_window::get_camera() {
     return _camera;
 }
 
@@ -112,7 +112,7 @@ void Gfx_window::mouse_moved(double x, double y) {
 
     _mouse_pos = glm::vec2(x, y);
 
-    _camera.update_direction(mouse_delta.x, mouse_delta.y);
+    _camera->update_direction(mouse_delta.x, mouse_delta.y);
 
     glfwSetCursorPos(_window, _width/2.0f, _height/2.0f);
 }
@@ -149,8 +149,8 @@ bool Gfx_window::init(std::shared_ptr<Gfx_timer> timer) {
     }
     glfwMakeContextCurrent(_window);
     
-    _camera.init((float)width, (float)height);
-    
+    _camera->init((float)width, (float)height);
+    _camera->update_direction(0, 0);
     
     // Initialize GLEW
     glewExperimental = true; // Needed for core profile
@@ -298,18 +298,18 @@ bool Gfx_window::run(std::function<void()> drawcall) {
 
 
     while(true) {
-        _camera.update(_timer->get_time());
+        _camera->update(_timer->get_time());
 
         Gfx_log::Gfx_GL_debug(Gfx_log::MAIN_LOOP, "window render loop");
         // Swap buffers
         // Dark blue background
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClearColor(0.0f, 0.0f, 0.3f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-        glm::mat4 cross_mvp(1.0);
-        _pos_col->m4_mvp = cross_mvp;
-        _pos_col->activate();
-        _crosshair->draw();
+        //glm::mat4 cross_mvp(1.0);
+        //_pos_col->m4_mvp = cross_mvp;
+        //_pos_col->activate();
+        //_crosshair->draw();
         
         drawcall();
         glfwSwapBuffers(_window);

@@ -47,6 +47,19 @@ struct SEVBO_uv {
 };
 
 
+struct SEVBO_3D_pos_uv_bb_vertex {
+    SEVBO_vertex pos;
+    SEVBO_uv uv;
+    
+    SEVBO_3D_pos_uv_bb_vertex() {}
+
+    SEVBO_3D_pos_uv_bb_vertex(SEVBO_vertex& p, SEVBO_uv& u) {
+        memcpy(&pos, &p, sizeof(SEVBO_vertex));
+        memcpy(&uv, &u, sizeof(SEVBO_uv));
+    }
+};
+
+
 struct SEVBO_3D_pos_norm_uv_bone_vertex {
     SEVBO_vertex pos;
     SEVBO_vertex norm;
@@ -121,6 +134,16 @@ struct SEVBO_2D_vertex {
 };
 
 
+struct SEVBO_3D_particle_inst
+{
+    float pos[3];
+    float rot;
+    float size;
+    float anim;
+    uint32_t color;
+    float pad[1];
+};
+
 struct SEVBO {
     SEVBO_header header;
 
@@ -181,6 +204,35 @@ struct SEVBO3D_pos_norm_uv : SEVBO {
 };
 
 
+struct SEVBO3D_pos_uv_bb : SEVBO {
+    std::vector<SEVBO_3D_pos_uv_bb_vertex> vertices;
+    std::vector<uint32_t> indices;
+
+    SEVBO3D_pos_uv_bb() {
+        vertex_size = sizeof(SEVBO_3D_pos_uv_bb_vertex);
+        offsets.push_back(sizeof(SEVBO_vertex));
+        offsets.push_back(sizeof(SEVBO_vertex) + sizeof(SEVBO_vertex));
+    }
+
+    virtual bool setup() {
+        num_vertices = vertices.size();
+        num_indices = indices.size();
+        header.index_size = num_indices * sizeof(uint32_t);
+        header.vert_size = num_vertices * vertex_size;
+
+        vertex_buffer_size = sizeof(SEVBO_3D_pos_uv_bb_vertex) * num_vertices;
+        indice_buffer_size = sizeof(uint32_t) * num_indices;
+
+        vert_data = vertices.data();
+        indice_data = indices.data();
+
+        if (num_vertices <= 0) {
+            return false;
+        }
+
+        return true;
+    }
+};
 
 struct SEVBO3D_pos_uv : SEVBO {
     std::vector<SEVBO_3D_pos_uv_vertex> vertices;
@@ -267,6 +319,62 @@ struct SEVBO_2D_pos_uv : SEVBO {
     }
 };
 
+
+struct SEVBO_3D_particle : SEVBO {
+    std::vector<SEVBO_3D_particle_inst> particles;
+    
+    SEVBO_3D_particle() {
+        vertex_size = sizeof(SEVBO_3D_particle_inst);
+    }
+
+    virtual bool setup() {
+        num_vertices = particles.size();
+
+        vert_data = particles.data();
+        vertex_buffer_size = num_vertices * sizeof(SEVBO_3D_particle_inst);
+
+        if (num_vertices <= 0) {
+            return false;
+        }
+
+        return true;
+    }
+};
+
+struct Gfx_particle_object {
+    uint32_t buffer_id;
+    uint32_t vertex_array_id;
+    uint32_t num_elements;
+
+    std::shared_ptr<Gfx_shader> shader;
+
+    void setup(std::shared_ptr<SEVBO> object_data, std::shared_ptr<Gfx_shader> shader) {
+        this->shader = shader;
+
+        glGenVertexArrays(1, &vertex_array_id);
+        glBindVertexArray(vertex_array_id);
+
+        glCreateBuffers(1, &buffer_id);
+        glNamedBufferData(buffer_id, object_data->vertex_buffer_size, 0, GL_STREAM_DRAW);
+        
+
+        shader->bindParticlesVBO(object_data, buffer_id);
+
+        num_elements = object_data->vertex_buffer_size / object_data->vertex_size;
+
+        glBindVertexArray(0);
+    }
+
+
+    void draw() {
+        Gfx_log::Gfx_GL_debug(Gfx_log::DRAWOBJ_DRAW, "particle draw");
+
+        glBindVertexArray(vertex_array_id);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer_id);
+        glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, num_elements);
+        glBindVertexArray(0);
+    }
+};
 
 struct Gfx_draw_object {
 	uint32_t vertexArrayObjID;

@@ -11,7 +11,7 @@ Gfx_camera::Gfx_camera() {
 
 
     // Initial position : on +Z
-    _gg_pos = glm::vec3(0, 0, 5);
+    _gg_pos = glm::vec3(0, 0, 0);
     // Initial horizontal angle : toward -Z
     _gg_horizontal_angle = 3.14f;
     // Initial vertical angle : none
@@ -76,6 +76,14 @@ void Gfx_camera::update(float delta) {
     );
 }
 
+void Gfx_camera::set_lookat(glm::vec3 point) {
+    _view = glm::lookAt(
+        _gg_pos,           // Camera is here
+        point, // and looks here : at the same position, plus "direction"
+        _v_up  // Head is up (set to 0,-1,0 to look upside-down)
+    );
+}
+
 void Gfx_camera::set_move_forward(bool move) {
     _forward = move;
 }
@@ -96,9 +104,11 @@ void Gfx_camera::set_move_backward(bool move) {
 void Gfx_camera::init(float width, float height) {
     //_proj = glm::perspective(glm::radians(90.0f), width / height, 0.1f, 100.0f);
     _proj = glm::perspective(glm::radians(_gg_initial_fov), width / height, 0.1f, 100.0f);
-    _gg_pos = glm::vec3(0, 0, 5);
+    _gg_pos = glm::vec3(0, 0, 0);
     _width = width;
     _height = height;
+    _v_up = glm::vec3(0, 1, 0);
+    _dir = glm::vec3(0, 0, -1);
 }
 
 

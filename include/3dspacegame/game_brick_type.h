@@ -13,6 +13,6 @@ struct Game_brick_type {
 };
 
 struct Game_brick_data {
-    uint32_t material; // shader options
+    uint32_t material; // which shader to use
     uint32_t texture; // which texture id
 };

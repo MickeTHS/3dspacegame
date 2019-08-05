@@ -21,11 +21,11 @@ struct Gfx_window {
     float yaw();
     float pitch();
 
-    Gfx_camera& get_camera();
+    std::shared_ptr<Gfx_camera> get_camera();
 
 private:
     GLFWwindow* _window;
-    Gfx_camera _camera;
+    std::shared_ptr<Gfx_camera> _camera;
     bool _mouse_init;
     glm::vec2 _mouse_pos;
     std::shared_ptr<Gfx_draw_object> _crosshair;

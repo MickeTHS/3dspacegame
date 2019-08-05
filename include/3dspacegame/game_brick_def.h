@@ -3,9 +3,9 @@
 #include "pch.h"
 
 struct Game_brick_coord {
-    int32_t x;
-    int32_t y;
-    int32_t z;
+    int16_t x;
+    int16_t y;
+    int16_t z;
 };
 
 struct Game_brick_instance {
